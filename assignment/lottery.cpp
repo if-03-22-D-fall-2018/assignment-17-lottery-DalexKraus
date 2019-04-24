@@ -21,13 +21,19 @@
 //Unused?
 #define 	MAX_LINE_LEN   (UUID_LEN + 1 + MAX_TIP_LEN)
 
+bool contains_tip(int* tip, int tipDigit);
+int get_number_of_lines(FILE* fd);
+
 FILE* fd;
 char separator;
+int last_drawing[TIP_SIZE];
 
 bool init_lottery(const char *csv_file, char csv_separator)
 {
     fd = fopen(csv_file, "r");
     separator = csv_separator;
+    for (int i = 0; i < TIP_SIZE; i++)
+        last_drawing[i] = 0;
     return fd != 0;
 }
 
@@ -49,12 +55,10 @@ bool get_tip(int tip_number, int tip[TIP_SIZE])
 
     //Skip UUID (+first separator)
     fseek(fd, (UUID_LEN + 1) * sizeof(char), SEEK_CUR);
-    printf("\npos in file: %d\n", ftell(fd));
 
     //Read tip string
     char tipString[MAX_TIP_LEN];
     fgets(tipString, MAX_TIP_LEN, fd);
-    printf("TipString: %s\n", tipString);
 
     //Split tip string
     char delimiter[2] = { separator, '\0' };
@@ -73,15 +77,78 @@ bool get_tip(int tip_number, int tip[TIP_SIZE])
 
 bool set_drawing(int drawing_numbers[TIP_SIZE])
 {
-  return 0;
+    for (int i = 0; i < TIP_SIZE; i++)
+        if (drawing_numbers[i] <= 0 || drawing_numbers[i] > 45)
+            return false;
+
+    for (int i = 0; i < TIP_SIZE; i++)
+        last_drawing[i] = drawing_numbers[i];
+    return true;
 }
 
-int get_tip_result(int tip_number)
+bool is_invalid_tip(int tip_number)
 {
-    return 0;
+    int previousPos = ftell(fd);
+    fseek(fd, 0, SEEK_END);
+    int endPos = ftell(fd);
+    fseek(fd, previousPos, SEEK_SET);
+    return tip_number * MAX_LINE_LEN > endPos;
+}
+
+bool is_drawing_set()
+{
+    for (int i = 0; i < TIP_SIZE; i++)
+        if (last_drawing[i] == 0)
+            return false;
+    return true;
+}
+
+int get_tip_result(int tip_number) {
+    if (tip_number < 0 || tip_number >= get_number_of_lines(fd))
+        return -2;
+
+    if (!is_drawing_set())
+        return -1;
+
+    int csv_tip[TIP_SIZE];
+    get_tip(tip_number, csv_tip);
+
+    int correctDigits = 0;
+    for (int i = 0; i < TIP_SIZE; i++)
+        if (contains_tip(last_drawing, csv_tip[i]))
+            correctDigits++;
+    return correctDigits;
+}
+
+int get_number_of_lines(FILE* fd)
+{
+    int previousPos = ftell(fd);
+    fseek(fd, 0, SEEK_SET);
+    int lines = 1;
+    while (!feof(fd))
+        if (fgetc(fd) == '\n') lines++;
+    fseek(fd, previousPos, SEEK_SET);
+    return lines;
 }
 
 int get_right_tips_count(int right_digits_count)
 {
-    return 0;
+    if (!is_drawing_set() || right_digits_count < 0 || right_digits_count > TIP_SIZE)
+        return -1;
+
+    int count = 0;
+    int numOfLines = get_number_of_lines(fd);
+    for (int i = 0; i < numOfLines; i++)
+    {
+        int result = get_tip_result(i);
+        if (result == right_digits_count)
+            count++;
+    }
+    return count;
+}
+
+bool contains_tip(int* tip, int tipDigit) {
+    for (unsigned int i = 0; i < TIP_SIZE; i++)
+        if (tip[i] == tipDigit) return true;
+    return false;
 }
