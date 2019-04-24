@@ -59,19 +59,16 @@ bool get_tip(int tip_number, int tip[TIP_SIZE])
     char tipString[MAX_TIP_LEN];
     fgets(tipString, MAX_TIP_LEN, fd);
 
-    printf("\n\nTip-String: %s\n\n", tipString);
-
     //Split tip string
     char delimiter[2] = { separator, '\0' };
-    char *ptr;
-    ptr = strtok(tipString, delimiter);
+    char *ptr = strtok(tipString, delimiter);
 
     int pos = 0;
     while(ptr != NULL) {
         int tipNumber = atoi(ptr);
-        tip[pos] = tipNumber > 0 && tipNumber <= 45 ? tipNumber : tip[pos];
-        printf(" tip: %d", tip[pos]);
+        tip[pos] = tipNumber;
         ptr = strtok(NULL, delimiter);
+        pos++;
     }
     return true;
 }
