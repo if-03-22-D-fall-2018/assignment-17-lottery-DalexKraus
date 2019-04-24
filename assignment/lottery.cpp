@@ -72,7 +72,7 @@ bool get_tip(int tip_number, int tip[TIP_SIZE])
         ptr = strtok(NULL, delimiter);
         pos++;
     }
-    return true;
+    return pos == TIP_SIZE;
 }
 
 bool set_drawing(int drawing_numbers[TIP_SIZE])
@@ -106,14 +106,12 @@ bool is_drawing_set()
 int get_tip_result(int tip_number) {
     if (tip_number < 0 || tip_number >= get_number_of_lines(fd))
         return -2;
-
     if (!is_drawing_set())
         return -1;
 
+    int correctDigits = 0;
     int csv_tip[TIP_SIZE];
     get_tip(tip_number, csv_tip);
-
-    int correctDigits = 0;
     for (int i = 0; i < TIP_SIZE; i++)
         if (contains_tip(last_drawing, csv_tip[i]))
             correctDigits++;
@@ -136,14 +134,10 @@ int get_right_tips_count(int right_digits_count)
     if (!is_drawing_set() || right_digits_count < 0 || right_digits_count > TIP_SIZE)
         return -1;
 
+    int lineCount = get_number_of_lines(fd);
     int count = 0;
-    int numOfLines = get_number_of_lines(fd);
-    for (int i = 0; i < numOfLines; i++)
-    {
-        int result = get_tip_result(i);
-        if (result == right_digits_count)
-            count++;
-    }
+    for (int i = 0; i < lineCount; i++)
+        if (get_tip_result(i) == right_digits_count) count++;
     return count;
 }
 
